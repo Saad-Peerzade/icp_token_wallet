@@ -1,0 +1,17 @@
+service : {
+  "get_balance" : () -> (nat64) query;
+  "greet" : (text) -> (text) query;
+  "transfer" : (text, nat64) -> (bool) func;
+  "mint" : (nat64) -> (bool) func;
+  "get_transactions" : () -> (vec<Transaction>) query;
+};
+
+type Transaction = record {
+  id: nat64;
+  tx_type: text;  // "sent" or "received"
+  amount: nat64;
+  from: opt text;
+  to: opt text;
+  date: text;
+  status: text;  // e.g. "completed"
+};

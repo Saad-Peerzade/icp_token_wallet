@@ -1,0 +1,27 @@
+{
+  "canisters": {
+    "my_token_wallet_backend": {
+      "candid": "src/my_token_wallet_backend/my_token_wallet_backend.did",
+      "package": "my_token_wallet_backend",
+      "type": "rust"
+    },
+    "my_token_wallet_frontend": {
+      "dependencies": [
+        "my_token_wallet_backend"
+      ],
+      "source": [
+        "frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
