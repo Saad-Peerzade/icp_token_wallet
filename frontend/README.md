@@ -114,5 +114,5 @@ MIT License
 
 ```
 
-If you want, I can also help you generate README content specific to your current project setup or any other details you want included.
+
 ```
