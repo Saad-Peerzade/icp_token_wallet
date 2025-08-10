@@ -1,82 +1,81 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
-// Import backend canister
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { my_token_wallet_backend } from "../../src/declarations/my_token_wallet_backend";
-import "./index.css";
-// Pages
+
+import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
-import Deposit from "./pages/Deposit";
-import Withdraw from "./pages/Withdraw";
-import Transactions from "./pages/Transaction";
-
-// Components
-import Navbar from "./components/Navbar";
+import Transfer from "./pages/Transfer";
+import Transactions from "./pages/Transactions";
 
 function App() {
-  const [balance, setBalance] = useState(null);
+  const [user, setUser] = useState({ email: "demo@wallet.com", walletAddress: "0x1a2b3c4d5e6f7890abcdef1234567890abcdef12" });
+  const [walletData, setWalletData] = useState({
+    balance: 0,
+    transactions: [],
+    tokenName: "MoSa",
+    tokenSymbol: "MSA",
+    totalSupply: 1000000,
+  });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Fetch balance from backend
-  async function getBalance() {
-    setError(null);
+  // Load wallet data on mount
+  useEffect(() => {
+    fetchWalletData();
+  }, []);
+
+  async function fetchWalletData() {
     try {
       setLoading(true);
-      const result = await my_token_wallet_backend.get_balance();
-      console.log("Balance fetched:", result);
-      // Defensive: convert result to string safely
-      setBalance(result?.toString?.() ?? String(result));
-    } catch (err) {
-      console.error("Failed to fetch balance:", err);
-      setError(`Failed to fetch balance: ${err.message || err.toString()}`);
-      setBalance(null);
+      const balance = await my_token_wallet_backend.get_balance();
+      const transactions = await my_token_wallet_backend.get_transactions();
+      setWalletData(prev => ({
+        ...prev,
+        balance,
+        transactions,
+      }));
+    } catch (e) {
+      console.error("Failed to load wallet data:", e);
     } finally {
       setLoading(false);
     }
   }
 
-  // Fetch balance on first load
-  useEffect(() => {
-    getBalance();
-  }, []);
+  async function handleTransfer(toAddress, amount) {
+    try {
+      setLoading(true);
+      const result = await my_token_wallet_backend.transfer_tokens(toAddress, BigInt(amount));
+      alert(result);
+      fetchWalletData();
+    } catch (e) {
+      alert("Transfer failed: " + e.message || e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleMint(amount) {
+    try {
+      setLoading(true);
+      await my_token_wallet_backend.mint_tokens(BigInt(amount));
+      alert("Minted " + amount + " tokens.");
+      fetchWalletData();
+    } catch (e) {
+      alert("Minting failed: " + e.message || e);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <Router>
-      <Navbar />
+      <Navbar user={user} />
       <Routes>
-        <Route
-          path="/"
-          element={
-            <div className="p-4">
-              <Home />
-              <div className="mt-6">
-                <button
-                  onClick={getBalance}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  disabled={loading}
-                >
-                  {loading ? "Fetching..." : "Check Balance"}
-                </button>
-
-                {error && (
-                  <p className="mt-2 text-red-600 font-semibold">{error}</p>
-                )}
-
-                {balance !== null && !error && (
-                  <p className="mt-2 text-lg">
-                    💰 Your balance: <strong>{balance}</strong>
-                  </p>
-                )}
-              </div>
-            </div>
-          }
-        />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/deposit" element={<Deposit />} />
-        <Route path="/withdraw" element={<Withdraw />} />
-        <Route path="/transactions" element={<Transactions />} />
+        <Route path="/" element={<Home walletData={walletData} onMint={handleMint} />} />
+        <Route path="/profile" element={<Profile user={user} />} />
+        <Route path="/transfer" element={<Transfer walletData={walletData} onTransfer={handleTransfer} />} />
+        <Route path="/transactions" element={<Transactions transactions={walletData.transactions} />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );
